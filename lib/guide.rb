@@ -1,6 +1,5 @@
 require 'restaurant'
 class Guide
-
 	# In order to make our class reusable
 	# we pass in parametre of path set to nil
 	def initialize(path)
@@ -17,65 +16,56 @@ class Guide
 
 	# Reads from file to list entries.
 	def list
-		if Restaurant.file_exists? == true
-			file = File.read("restaurant.txt")
-			puts file
-		else 
-			puts "There are no entries. Please start a list."
-		end
+		output_action_header("***Listing restaurants***")
+		restaurants = Restaurant.saved_restaurants
+		output_restaurant_table(restaurants)
 	end
 
 	# Writes to file the entries.
 	def add
-		puts "\nAdd a restaurant\n\n".upcase
-		restaurant = Restaurant.new
-
-		print "Restaurant name: "
-		restaurant.name = gets.chomp.strip
-
-		print "Cuisine type: "
-		restaurant.cuisine = gets.chomp.strip
-
-		print "Average price: "
-		restaurant.price = gets.chomp.strip
-
+		puts "\n\n\nAdd a restaurant\n\n".upcase
+		restaurant = Restaurant.build_using_questions
 		if restaurant.save
 			puts "\nRestaurant Added\n\n"
 		else
 			puts "\nSave Error: restaurant not added\n\n"	
 		end
-	
 	end
 
+	#Searches in the storage file for items based on keywords.
 	def find
-		puts "Enter keyword."
-		puts "Exemple: Mexican, Mex..."
+		puts "Enter keyword, EX: Mexican or Mex"
 		userKeyword = gets.chomp.downcase.strip
-		arr = Array.new
-		File.readlines('restaurant.txt').each do |line|
-			value = line.split("\t")[1].downcase.strip
-			if value.include?(userKeyword)
-				arr.push(line)
+		restaurants = Restaurant.saved_restaurants
+		found_restaurant_array = []
+			restaurants.each do |rest|
+			if rest.cuisine.include?(userKeyword)
+				found_restaurant_array << rest
 			end
 		end
-		puts arr
+		if !found_restaurant_array.empty?
+		output_restaurant_table(found_restaurant_array)
+		else
+			output_action_footer("oops! could not find an entry")
+		end
 	end
 
 	# A method that lists restaurant under the enterd price.
 	def sort
 		puts "Enter maximum price."
-		userChoice = gets.chomp.to_i
-		arr = Array.new
-		File.readlines('restaurant.txt').each do |line|
-			price = line.split("\t").last.delete("\n").to_i
-			if price < userChoice
-				arr.push(line)
+		user_choice = gets.chomp.to_i
+		output_action_header("***sortingting restaurants***")
+		restaurants = Restaurant.saved_restaurants
+		found_restaurant_array = []
+			restaurants.each do |rest|
+			if rest.price.to_i <= user_choice
+				found_restaurant_array << rest
 			end
 		end
-		if arr.empty?
-			puts "Can not find anything within that price range. Try higher price. "
+		if !found_restaurant_array.empty?
+		output_restaurant_table(found_restaurant_array)
 		else
-			puts arr
+			output_action_footer("oops! could not find an entry")
 		end
 	end
 
@@ -94,6 +84,7 @@ class Guide
 		conclusion
 	end
 
+	#Grabs the user's input then calls the method(s).
 	def do_action(action)
 		case action
 		when 'list'
@@ -114,5 +105,32 @@ class Guide
 
 	def introduction; puts "\n*****Welcome to restaurant finder*****\n\n";end
 	def conclusion; puts "\n\n*****Thank you for using this App*****\n\n";end
+
+	
+
+	private
+
+	def output_action_header(text)
+		puts "\n#{text.upcase.center(60)}\n\n"
+	end
+
+	def output_action_footer(text)
+		puts "\n\n#{text.upcase.center(60)}\n"
+	end
+
+	def output_restaurant_table(restaurants=[])
+		print " " + "Name".ljust(30)
+		print " " + "Cuisine".ljust(20)
+		print " " + "Price".ljust(6) + "\n"
+		puts "-" * 60
+		restaurants.each do |rest|
+			line = " " << rest.name.ljust(30)
+			line << " " + rest.cuisine.ljust(20)
+			line << " " + rest.formatted_price.rjust(6)
+			puts line
+		end
+		puts "No listing found" if restaurants.empty?
+		puts "-" * 60
+	end
 
 end
